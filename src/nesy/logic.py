@@ -17,7 +17,7 @@ class ForwardChaining(LogicEngine):
 
         # Dummy example:
 
-        query = parse_term("addition(tensor(images,0), tensor(images,1), 0)")
+        query = parse_term("addition(tensor(images,0), tensor(images,1), 0
 
 
         Or = lambda x:  None

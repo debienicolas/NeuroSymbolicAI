@@ -1,4 +1,5 @@
 import torch
+from functools import reduce
 
 class Evaluator():
 
@@ -8,7 +9,6 @@ class Evaluator():
 
     def evaluate(self, tensor_sources, and_or_tree, queries):
         # TODO: Implement this
-
 
         # Our dummy And-Or-Tree (addition(img0, img1,0) is represented by digit(img0,0) AND digit(img1,0)
         # The evaluation is:
@@ -23,3 +23,15 @@ class Evaluator():
         else:
             res = [p_sum_0[0] for query in queries]
         return torch.stack(res)
+
+    def __traverse_and_or_tree(self, node):
+        if node.kind == "Or":
+            values = [self.__traverse_and_or_tree(n) for n in node.children]
+            return reduce(self.label_semantics.disjunction, values)
+        elif node.kind == "And":
+            values = [self.__traverse_and_or_tree(n) for n in node.children]
+            return reduce(self.label_semantics.conjunction, values)
+        elif node.kind == "Neg":
+            return self.label_semantics.negation(node.children[0])
+        elif node.kind == "Leaf":
+            return self.neural_predicates[node.value.functor](node.value.arguments)
