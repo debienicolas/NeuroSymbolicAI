@@ -115,7 +115,7 @@ class ForwardChaining(LogicEngine):
                                 # only add the terms in the body that are neural predicates
                                 # Assumption that the tree only has leaf then And and then Or
                                 and_or_tree.children.append(
-                                    Node("And", [Node("Leaf", term) for term in substituted_body if self.isNeuralPredicate(term, program)])
+                                    Node("And", [Node("Leaf", [], value=term) for term in substituted_body if self.isNeuralPredicate(term, program)])
                                 )
                                 cont = False
             trees.append(and_or_tree)    

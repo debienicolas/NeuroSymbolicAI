@@ -5,4 +5,7 @@ class Node:
         self.children = children
 
     def __repr__(self):
-        return f"{self.kind}({self.children})"
+        if self.kind == "Leaf":
+            return f"{self.kind}({self.value})"
+        else:
+            return f"{self.kind}({self.children})"

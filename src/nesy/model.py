@@ -6,7 +6,7 @@ import nesy.parser
 from nesy.semantics import Semantics
 from nesy.term import Clause, Term
 from nesy.logic import LogicEngine
-from torch import nn
+from torch import Tensor, device, nn
 from sklearn.metrics import accuracy_score
 from nesy.evaluator import Evaluator
 
@@ -68,6 +68,7 @@ class NeSyModel(pl.LightningModule):
             results = self.evaluator.evaluate(tensor_sources, and_or_tree, queries)
         # and_or_tree = self.logic_engine.reason(self.program, queries)
         # results = self.evaluator.evaluate(tensor_sources, and_or_tree, queries)
+        results = Tensor.cpu(results)
         return results
 
     def training_step(self, I, batch_idx):
@@ -80,6 +81,7 @@ class NeSyModel(pl.LightningModule):
 
     def validation_step(self, I, batch_idx):
         tensor_sources, queries, y_true = I
+        y_true = Tensor.cpu(y_true)
         y_preds = self.forward(tensor_sources, queries)
         accuracy = accuracy_score(y_true, y_preds.argmax(dim=-1))
         self.log("test_acc", accuracy, on_step=True, on_epoch=True, prog_bar=True)

@@ -16,6 +16,7 @@ model = NeSyModel(program=task_train.program,
                   neural_predicates=neural_predicates,
                   label_semantics=SumProductSemiring())
 
+torch.set_default_device('cpu')
 trainer = pl.Trainer(max_epochs=1)
 trainer.fit(model=model,
             train_dataloaders=task_train.dataloader(batch_size=2),
