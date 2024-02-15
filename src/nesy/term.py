@@ -7,6 +7,12 @@ class Term(namedtuple('Term', ['functor', 'arguments'])):
         if len(self.arguments) == 0:
             return str(self.functor)
         return str(self.functor) + "(" + ",".join([str(a) for a in self.arguments]) + ")"
+    
+    def __eq__(self, other):
+        return self.__repr__() == other.__repr__()
+    
+    def __hash__(self):
+        return hash((self.functor, self.arguments))
 
 
 class Variable(namedtuple('Variable', ['name'])):
