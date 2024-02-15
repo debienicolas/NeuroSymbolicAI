@@ -49,72 +49,76 @@ class ForwardChaining(LogicEngine):
 
     def reason(self, program: tuple[Clause], queries: list[Term]):
 
-        # initialize the and-or tree
-        and_or_tree = Node("Or", [])
-    
-        known_terms = [] # store inferred facts
-        inferred_terms = [] # store inferred facts
+        trees = []
 
-        # initialize the known terms 
-        for clause in program:
-            if isinstance(clause, Fact):
-                if clause.weight is None:
-                    known_terms.append(clause.term)
-                else:
-                    known_terms.append(clause.term)
-        # # add the query as a term
-        # for query in queries:
-        #     known_terms.append(query)
-        assert all([isinstance(term, Term) for term in known_terms])
-        #print("Known terms: ", known_terms)
+        for query in queries:
 
-        clauses = [clause for clause in program if isinstance(clause, Clause)]
-        assert all([isinstance(clause, Clause) for clause in clauses])
+            # initialize the and-or tree
+            and_or_tree = Node("Or", [])
+        
+            known_terms = [] # store inferred facts
+            inferred_terms = [] # store inferred facts
 
-        cont = True
-        while cont:
-            cont = False
-            # for every clause check if all the premises are satisfied
-            for clause in clauses:
-                #print("Clause: ", clause)
-                clause_vars = self.getVarsClause(clause)
-                #print("Clause vars: ", clause_vars)
-                assert all([isinstance(var, Variable) for var in clause_vars])
+            # initialize the known terms 
+            for clause in program:
+                if isinstance(clause, Fact):
+                    if clause.weight is None:
+                        known_terms.append(clause.term)
+                    else:
+                        known_terms.append(clause.term)
+            # # add the query as a term
+            # for query in queries:
+            #     known_terms.append(query)
+            assert all([isinstance(term, Term) for term in known_terms])
+            #print("Known terms: ", known_terms)
 
-                constants = self.getConstants(known_terms)
-                #print("Constants: ", constants)
-                assert all([isinstance(term, Term) for term in constants])
+            clauses = [clause for clause in program if isinstance(clause, Clause)]
+            assert all([isinstance(clause, Clause) for clause in clauses])
 
-                substitutions = self.generateSubstitutions(clause_vars, constants)
-                #print(len(substitutions))
-                assert all([isinstance(value,Term) for value in substitutions[0].values()])
-                
+            cont = True
+            while cont:
+                cont = False
+                # for every clause check if all the premises are satisfied
+                for clause in clauses:
+                    #print("Clause: ", clause)
+                    clause_vars = self.getVarsClause(clause)
+                    #print("Clause vars: ", clause_vars)
+                    assert all([isinstance(var, Variable) for var in clause_vars])
 
-                body = [term for term in clause.body]
-                assert all([isinstance(term, Term) for term in body])
-                
-                for substitution in substitutions:
+                    constants = self.getConstants(known_terms)
+                    #print("Constants: ", constants)
+                    assert all([isinstance(term, Term) for term in constants])
+
+                    substitutions = self.generateSubstitutions(clause_vars, constants)
+                    #print(len(substitutions))
+                    assert all([isinstance(value,Term) for value in substitutions[0].values()])
                     
-                    # substitution = {Variable('X'): Term('tensor', [Variable('images'), 0]), Variable('Y'): Term('tensor', [Variable('images'), 1]), Variable('Z'): Term(1,()), Variable('N1'): Term(0,()), Variable('N2'): Term(1,())}
-                    substituted_body = [self.apply_substitution(substitution, term) for term in body]
-                    assert all([isinstance(term, Term) for term in substituted_body])
-                    # check if all the premises are satisfied                
-                    if all([term in known_terms for term in substituted_body]):    
-                        inferred_fact = self.apply_substitution(substitution, clause.head)
-                        # if inferred_fact not in known_terms and inferred_fact not in inferred_terms:
-                        #     inferred_terms.append(inferred_fact)
-                        #     known_terms.append(inferred_fact)
-                        #     cont = True
-                        if inferred_fact in queries:
-                            
-                            
-                            # add the inferred fact to the and-or tree
-                            # only add the terms in the body that are neural predicates
-                            # Assumption that the tree only has leaf then And and then Or
-                            and_or_tree.children.append(
-                                Node("And", [Node("Leaf", term) for term in substituted_body if self.isNeuralPredicate(term, program)])
-                            )
-                            cont = False
 
-        return and_or_tree
+                    body = [term for term in clause.body]
+                    assert all([isinstance(term, Term) for term in body])
+                    
+                    for substitution in substitutions:
+                        
+                        # substitution = {Variable('X'): Term('tensor', [Variable('images'), 0]), Variable('Y'): Term('tensor', [Variable('images'), 1]), Variable('Z'): Term(1,()), Variable('N1'): Term(0,()), Variable('N2'): Term(1,())}
+                        substituted_body = [self.apply_substitution(substitution, term) for term in body]
+                        assert all([isinstance(term, Term) for term in substituted_body])
+                        # check if all the premises are satisfied                
+                        if all([term in known_terms for term in substituted_body]):    
+                            inferred_fact = self.apply_substitution(substitution, clause.head)
+                            # if inferred_fact not in known_terms and inferred_fact not in inferred_terms:
+                            #     inferred_terms.append(inferred_fact)
+                            #     known_terms.append(inferred_fact)
+                            #     cont = True
+                            if inferred_fact == query:
+                                
+                                # add the inferred fact to the and-or tree
+                                # only add the terms in the body that are neural predicates
+                                # Assumption that the tree only has leaf then And and then Or
+                                and_or_tree.children.append(
+                                    Node("And", [Node("Leaf", term) for term in substituted_body if self.isNeuralPredicate(term, program)])
+                                )
+                                cont = False
+            trees.append(and_or_tree)    
+
+        return trees
 
