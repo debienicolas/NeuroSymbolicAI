@@ -76,17 +76,17 @@ class ForwardChaining(LogicEngine):
             cont = False
             # for every clause check if all the premises are satisfied
             for clause in clauses:
-                print("Clause: ", clause)
+                #print("Clause: ", clause)
                 clause_vars = self.getVarsClause(clause)
-                print("Clause vars: ", clause_vars)
+                #print("Clause vars: ", clause_vars)
                 assert all([isinstance(var, Variable) for var in clause_vars])
 
                 constants = self.getConstants(known_terms)
-                print("Constants: ", constants)
+                #print("Constants: ", constants)
                 assert all([isinstance(term, Term) for term in constants])
 
                 substitutions = self.generateSubstitutions(clause_vars, constants)
-                print(len(substitutions))
+                #print(len(substitutions))
                 assert all([isinstance(value,Term) for value in substitutions[0].values()])
                 
 
