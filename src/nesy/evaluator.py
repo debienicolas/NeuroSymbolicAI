@@ -1,4 +1,5 @@
 import torch
+from nesy.tree import Node
 
 class Evaluator():
 

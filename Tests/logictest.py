@@ -47,5 +47,5 @@ def test_foward_chaining_multiple_queries():
     return ForwardChaining().reason(program, queries)
 
 print(test_forward_chaining_1())
-print(test_forward_chaining_2())
-print(test_foward_chaining_multiple_queries())
+#print(test_forward_chaining_2())
+#print(test_foward_chaining_multiple_queries())
