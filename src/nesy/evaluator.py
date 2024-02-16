@@ -2,6 +2,7 @@ import re
 import torch
 from functools import reduce
 from nesy.semantics import SumProductSemiring, LukasieviczTNorm,GodelTNorm,ProductTNorm
+import time
 
 class Evaluator():
 
@@ -11,6 +12,7 @@ class Evaluator():
 
     def evaluate(self, tensor_sources, and_or_tree, queries):
         # TODO: Implement this
+        #start = time.time()
         result = []
         #print("Queries: ", queries)
         #print("And or tree: ", and_or_tree)
@@ -18,6 +20,7 @@ class Evaluator():
             result.append(self.__traverse_and_or_tree(i,tensor_sources))
             # print(i)
             # print("Return traversal: ", self.__traverse_and_or_tree(i,tensor_sources))
+        #print("Time evaluation: ", time.time() - start)
         return torch.stack(result)
 
         # Our dummy And-Or-Tree (addition(img0, img1,0) is represented by digit(img0,0) AND digit(img1,0)

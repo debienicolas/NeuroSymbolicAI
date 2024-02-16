@@ -24,13 +24,10 @@ model = NeSyModel(program=task_train.program,
                   label_semantics=ProductTNorm())
 
 print("Init the training")
-trainer = pl.Trainer(max_epochs=1, accelerator="cpu")
-# trainer.fit(model=model,
-#             train_dataloaders=task_train.dataloader(batch_size=1),
-#             val_dataloaders=task_test.dataloader(batch_size=1))
+trainer = pl.Trainer(max_epochs=4, accelerator="cpu")
 trainer.fit(model=model,
-            train_dataloaders=task_train.dataloader(batch_size=1))
+            train_dataloaders=task_train.dataloader(batch_size=1),
+            val_dataloaders=task_test.dataloader(batch_size=1))
 
-# Test the model
-print("Test the model")
-trainer.test(model=model, test_dataloaders=task_test.dataloader(batch_size=5))
+
+
