@@ -1,3 +1,4 @@
+import re
 from typing import List, Dict
 import torch
 import pytorch_lightning as pl
@@ -56,16 +57,22 @@ class NeSyModel(pl.LightningModule):
         
         # Test case
         if isinstance(queries[0], list):
+            print("Test case")
             results = []
             for query in queries:
                 and_or_tree = self.logic_engine.reason(self.program, query)
                 result = self.evaluator.evaluate(tensor_sources, and_or_tree, query)
                 results.append(result)
             results = torch.stack(results)
+            print("Results")
+            for i in results:
+                print(i)
         # Training case
         else:
+            print("Training case")
             and_or_tree = self.logic_engine.reason(self.program, queries)
             results = self.evaluator.evaluate(tensor_sources, and_or_tree, queries)
+            print(results)
         # and_or_tree = self.logic_engine.reason(self.program, queries)
         # results = self.evaluator.evaluate(tensor_sources, and_or_tree, queries)
         return results

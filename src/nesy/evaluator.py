@@ -1,3 +1,4 @@
+import re
 import torch
 from functools import reduce
 from nesy.semantics import SumProductSemiring, LukasieviczTNorm,GodelTNorm,ProductTNorm
@@ -10,9 +11,14 @@ class Evaluator():
 
     def evaluate(self, tensor_sources, and_or_tree, queries):
         # TODO: Implement this
+        result = []
+        #print("Queries: ", queries)
+        #print("And or tree: ", and_or_tree)
         for i in and_or_tree:
-            print(i)
-            print("Return traversal: ", self.__traverse_and_or_tree(i,tensor_sources))
+            result.append(self.__traverse_and_or_tree(i,tensor_sources))
+            # print(i)
+            # print("Return traversal: ", self.__traverse_and_or_tree(i,tensor_sources))
+        return torch.stack(result)
 
         # Our dummy And-Or-Tree (addition(img0, img1,0) is represented by digit(img0,0) AND digit(img1,0)
         # The evaluation is:
@@ -39,5 +45,5 @@ class Evaluator():
             return self.label_semantics.negation(node.children[0])
         elif node.kind == "Leaf":
             image_number = int(node.value.arguments[0].arguments[1].functor)
-            print("Value: ", self.neural_predicates[node.value.functor](tensor_sources["images"][:,image_number])[:,0])
+            # print("Leaf: ",self.neural_predicates[node.value.functor](tensor_sources["images"][:,image_number])[:,0])
             return self.neural_predicates[node.value.functor](tensor_sources["images"][:,image_number])[:,0]
