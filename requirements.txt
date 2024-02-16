@@ -1,5 +1,10 @@
+# ply
+# torch
+# lightning
+# scikit-learn
+# torchvision
 ply
-torch
-lightning
+pytorch
+pytorch-lightning
 scikit-learn
 torchvision
