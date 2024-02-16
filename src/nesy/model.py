@@ -57,22 +57,17 @@ class NeSyModel(pl.LightningModule):
         
         # Test case
         if isinstance(queries[0], list):
-            print("Test case")
             results = []
             for query in queries:
                 and_or_tree = self.logic_engine.reason(self.program, query)
                 result = self.evaluator.evaluate(tensor_sources, and_or_tree, query)
                 results.append(result)
-            results = torch.stack(results)
-            print("Results")
-            for i in results:
-                print(i)
+            #results = torch.stack(results)
+            results = result
         # Training case
         else:
-            print("Training case")
             and_or_tree = self.logic_engine.reason(self.program, queries)
             results = self.evaluator.evaluate(tensor_sources, and_or_tree, queries)
-            print(results)
         # and_or_tree = self.logic_engine.reason(self.program, queries)
         # results = self.evaluator.evaluate(tensor_sources, and_or_tree, queries)
         return results
@@ -88,7 +83,8 @@ class NeSyModel(pl.LightningModule):
     def validation_step(self, I, batch_idx):
         tensor_sources, queries, y_true = I
         y_preds = self.forward(tensor_sources, queries)
-        accuracy = accuracy_score(y_true, y_preds.argmax(dim=-1))
+        #accuracy = accuracy_score(y_true, y_preds.argmax(dim=-1))
+        accuracy = accuracy_score(y_true, y_preds.argmax(dim=0))
         self.log("test_acc", accuracy, on_step=True, on_epoch=True, prog_bar=True)
         return accuracy
 

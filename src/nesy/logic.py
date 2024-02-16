@@ -1,3 +1,5 @@
+from scipy import constants
+from sympy import substitution
 from nesy.term import Term, Clause, Fact, Variable
 from nesy.parser import parse_term, parse_program
 from abc import ABC, abstractmethod
@@ -5,6 +7,7 @@ from collections import namedtuple
 from itertools import product
 from nesy.tree import Node
 from itertools import combinations_with_replacement, product, permutations
+import time
 
 class LogicEngine(ABC):
 
@@ -48,7 +51,8 @@ class ForwardChaining(LogicEngine):
         return term in neural_terms_program
 
     def reason(self, program: tuple[Clause], queries: list[Term]):
-
+        return self.reasonEfficient(program, queries)
+        start = time.time()
         trees = []
 
         for query in queries:
@@ -120,5 +124,85 @@ class ForwardChaining(LogicEngine):
                                 cont = False
             trees.append(and_or_tree)    
 
+        print("Time reason: ", time.time() - start)
         return trees
+    
+    def getVarsTerm(self, term):
+        return [var for var in term.arguments if isinstance(var, Variable)]
+    
+    def getConstrainedSubstitutions(self,clause, query):
+        # check the clause and see if the query can constrain the substitution
+        # check if query functor is in the clause head
+        if query.functor == clause.head.functor:
+            # take the variables in the clause head and create a dictionary with the query arguments
+            head_vars = self.getVarsTerm(clause.head)
+            query_constant = [arg for arg in query.arguments if not isinstance(arg, Variable)]
+            constr_sub = {var: query_constant[i] for i, var in enumerate(head_vars)}
+            
+            return constr_sub
+    
+    def reasonEfficient(self, program: tuple[Clause], queries: list[Term]):
+        # look at the query and perform that substitution
+        #start = time.time()
+        trees = []
+
+        for query in queries:
+
+            # initialize the and-or tree
+            and_or_tree = Node("Or", [])
+        
+            known_terms = [] # store inferred facts
+            inferred_terms = [] # store inferred facts
+
+            # initialize the known terms 
+            for clause in program:
+                if isinstance(clause, Fact):
+                    if clause.weight is None:
+                        known_terms.append(clause.term)
+                    else:
+                        known_terms.append(clause.term)
+
+            clauses = [clause for clause in program if isinstance(clause, Clause)]
+
+            cont = True
+            while cont:
+                # check every clause
+                for clause in clauses:
+
+                    # check if the query can constrain the substitution
+                    constrained_subs = self.getConstrainedSubstitutions(clause, query)
+
+                    all_vars = self.getVarsClause(clause)
+                    empty_vars = [var for var in all_vars if var not in constrained_subs.keys()]
+
+                    constants = self.getConstants(known_terms)
+
+                    substitutions = self.generateSubstitutions(empty_vars, constants)
+
+                    body = [term for term in clause.body]
+
+                    for substitution in substitutions:
+                        # merge the constrained substitution with the generated substitution
+                        substitution.update(constrained_subs)
+                        substituted_body = [self.apply_substitution(substitution, term) for term in body]
+                        assert all([isinstance(term, Term) for term in substituted_body])
+                        # check if all the premises are satisfied                
+                        if all([term in known_terms for term in substituted_body]):    
+                            inferred_fact = self.apply_substitution(substitution, clause.head)
+                            
+                            if inferred_fact == query:
+                                
+                                and_or_tree.children.append(
+                                    Node("And", [Node("Leaf", [], value=term) for term in substituted_body if self.isNeuralPredicate(term, program)])
+                                )
+                                cont = False
+            trees.append(and_or_tree)
+        #print("Time reason efficient: ", time.time() - start)
+        return trees
+
+
+                    
+
+
+                    
 
