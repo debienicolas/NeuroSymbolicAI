@@ -29,7 +29,7 @@ trainer = pl.Trainer(max_epochs=1, accelerator="cpu")
 #             train_dataloaders=task_train.dataloader(batch_size=1),
 #             val_dataloaders=task_test.dataloader(batch_size=1))
 trainer.fit(model=model,
-            train_dataloaders=task_train.dataloader(batch_size=5))
+            train_dataloaders=task_train.dataloader(batch_size=1))
 
 # Test the model
 print("Test the model")
