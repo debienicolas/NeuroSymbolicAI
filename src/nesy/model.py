@@ -25,12 +25,17 @@ class MNISTEncoder(nn.Module):
     def forward(self, x):
         #We flatten the tensor
         original_shape = x.shape
+        # original_shape = [1,1,28,28]
         n_dims = len(original_shape)
+        # n_dims = 4
         x = x.view(-1, 784)
         o =  self.net(x)
-
+        # o.shape = [1,2]
         #We restore the original shape
         o = o.view(*original_shape[0:n_dims-3], self.n)
+        # o.shape = [2]
+
+        # output has probability for each class
         return o
 
 class NeSyModel(pl.LightningModule):
@@ -58,16 +63,19 @@ class NeSyModel(pl.LightningModule):
         # Test case
         if isinstance(queries[0], list):
             results = []
-            for query in queries:
+            for i,query in enumerate(queries):
                 and_or_tree = self.logic_engine.reason(self.program, query)
-                result = self.evaluator.evaluate(tensor_sources, and_or_tree, query)
+                
+                result = self.evaluator.evaluate(tensor_sources, and_or_tree, query, i)
                 results.append(result)
-            #results = torch.stack(results)
-            results = result
+
+            results = torch.stack(results)
+            #results = result
+        
         # Training case
         else:
             and_or_tree = self.logic_engine.reason(self.program, queries)
-            results = self.evaluator.evaluate(tensor_sources, and_or_tree, queries)
+            results = self.evaluator.evaluate(tensor_sources, and_or_tree, queries, index=0, train=True)
         # and_or_tree = self.logic_engine.reason(self.program, queries)
         # results = self.evaluator.evaluate(tensor_sources, and_or_tree, queries)
         return results
@@ -83,8 +91,8 @@ class NeSyModel(pl.LightningModule):
     def validation_step(self, I, batch_idx):
         tensor_sources, queries, y_true = I
         y_preds = self.forward(tensor_sources, queries)
-        #accuracy = accuracy_score(y_true, y_preds.argmax(dim=-1))
-        accuracy = accuracy_score(y_true, y_preds.argmax(dim=0))
+        accuracy = accuracy_score(y_true, y_preds.argmax(dim=-1))
+        #accuracy = accuracy_score(y_true, y_preds.argmax(dim=0))
         self.log("test_acc", accuracy, on_step=True, on_epoch=True, prog_bar=True)
         return accuracy
 
