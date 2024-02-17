@@ -3,3 +3,6 @@
 *.pyc
 lightning_logs
 data
+wandb
+nesy
+```

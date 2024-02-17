@@ -1,3 +1,4 @@
+from hmac import new
 from nesy.parser import parse_program, parse_clause
 
 import torch
@@ -28,6 +29,21 @@ class AdditionTask(Dataset):
             if y < n_classes:
                 self.original_images.append(x)
                 self.original_targets.append(y)
+        # From these images, only sample 6000 with balanced classes
+        goal = 6000//n_classes
+        goals = {i:0 for i in range(n_classes)}
+        new_original_images = []
+        new_original_targets = []
+        for i,img in enumerate(self.original_images):
+            if goals[self.original_targets[i]] < goal:
+                new_original_images.append(img)
+                new_original_targets.append(self.original_targets[i])
+                goals[self.original_targets[i]] += 1
+            else:
+                continue
+        self.original_images = new_original_images
+        self.original_targets = new_original_targets
+        
         self.original_images = torch.stack(self.original_images)
         self.original_targets = torch.tensor(self.original_targets)
         self.n_classes = n_classes

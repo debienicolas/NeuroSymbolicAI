@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 
 import nesy.parser
 from nesy.semantics import Semantics
-from nesy.term import Clause, Term
+from nesy.term import Clause, Term,Fact
 from nesy.logic import LogicEngine
 from torch import Tensor, device, nn
 from sklearn.metrics import accuracy_score
@@ -21,7 +21,6 @@ class MNISTEncoder(nn.Module):
             nn.Linear(30, n),
             nn.Softmax(-1))
 
-
     def forward(self, x):
         #We flatten the tensor
         original_shape = x.shape
@@ -34,12 +33,60 @@ class MNISTEncoder(nn.Module):
         #We restore the original shape
         o = o.view(*original_shape[0:n_dims-3], self.n)
         # o.shape = [2]
-
         # output has probability for each class
         return o
+    
+# class MNISTEncoderConv(nn.Module):
+#     # Using a convolutional neural network
+#     def __init__(self,n):
+#         self.n = n
+#         super(MNISTEncoderConv, self).__init__()
+#         # input shape = [1,28,28]
+#         self.conv1 = nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
+#         self.conv2 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+
+#     def forward(self, x):
+#         #print("Input shape: ", x.shape)
+#         x = self.conv1(x)
+#         x = nn.ReLU()(x)
+#         x = nn.MaxPool2d(kernel_size=2, stride=2)(x)
+#         x = self.conv2(x)
+#         x = nn.ReLU()(x)
+#         x = nn.MaxPool2d(kernel_size=2, stride=2)(x)
+#         x = x.view(-1, 32*7*7)
+#         x = nn.Linear(32*7*7, 3)(x)
+#         # x = x.view(-1, 32*14*14)
+#         # x = nn.Linear(32*14*14, 3)(x)
+#         x = nn.Softmax(-1)(x)
+#         x = x.squeeze()
+#         #o = self.net(x)
+#         #print("Output shape: ", x.shape)
+#         return x
+    
+class MNISTEncoderConv(nn.Module):
+    def __init__(self, n):
+        super(MNISTEncoderConv, self).__init__()
+        self.n = n
+        self.conv_net = nn.Sequential(
+            nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+        self.fc = nn.Linear(32*7*7, n)  # Adjusted the input size for the fully connected layer
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x):
+        x = self.conv_net(x)
+        x = x.view(-1, 32*7*7)
+        x = self.fc(x)
+        x = self.softmax(x)
+        return x
+
 
 class NeSyModel(pl.LightningModule):
-
 
     def __init__(self, program : List[Clause],
                  neural_predicates: torch.nn.ModuleDict,
@@ -54,6 +101,7 @@ class NeSyModel(pl.LightningModule):
         self.learning_rate = learning_rate
         self.bce = torch.nn.BCELoss()
         self.evaluator = Evaluator(neural_predicates=neural_predicates, label_semantics=label_semantics)
+
 
     def forward(self, tensor_sources: Dict[str, torch.Tensor],  queries: List[Term] | List[List[Term]]):
         # TODO: Note that you need to handle both the cases of single queries (List[Term]), like during training
@@ -92,8 +140,12 @@ class NeSyModel(pl.LightningModule):
         tensor_sources, queries, y_true = I
         y_preds = self.forward(tensor_sources, queries)
         accuracy = accuracy_score(y_true, y_preds.argmax(dim=-1))
-        #accuracy = accuracy_score(y_true, y_preds.argmax(dim=0))
         self.log("test_acc", accuracy, on_step=True, on_epoch=True, prog_bar=True)
+        
+        # log the amount of non neural facts
+        self.log("non_neural_facts", len([c for c in self.program if isinstance(c, Fact) and c.weight is None]))
+        self.log("neural_facts", len([c for c in self.program if isinstance(c, Fact) and c.weight is not None]))
+
         return accuracy
 
     def configure_optimizers(self):

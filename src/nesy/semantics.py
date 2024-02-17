@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+import torch
 
 class Semantics(ABC):
 
@@ -27,15 +27,15 @@ class SumProductSemiring(Semantics):
 
     def negation(self, a):
         return 1 - a
-
+    
 
 class LukasieviczTNorm(Semantics):
 
     def conjunction(self, a, b):
-        return max(0, a + b - 1)
+        return max(torch.tensor(0), a + b - 1)
 
     def disjunction(self, a, b):
-        return min(1, a + b)
+        return min(torch.tensor(1), a + b)
 
     def negation(self, a):
         return 1 - a
