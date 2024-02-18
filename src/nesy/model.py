@@ -1,4 +1,6 @@
 import re
+import time
+from tracemalloc import start
 from typing import List, Dict
 import torch
 import pytorch_lightning as pl
@@ -67,23 +69,35 @@ class MNISTEncoderConv(nn.Module):
     def __init__(self, n):
         super(MNISTEncoderConv, self).__init__()
         self.n = n
-        self.conv_net = nn.Sequential(
-            nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1),
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(in_channels=1, out_channels=16,kernel_size=5, stride=1, padding=2),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2)
+            nn.MaxPool2d(kernel_size=2)
         )
-        self.fc = nn.Linear(32*7*7, n)  # Adjusted the input size for the fully connected layer
-        self.softmax = nn.Softmax(dim=1)
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=2),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2)
+        )
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(32, 64, kernel_size=5, stride=1, padding=2),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2)
+        )
+        self.out = nn.Linear(64*3*3, n)
+
 
     def forward(self, x):
-        x = self.conv_net(x)
-        x = x.view(-1, 32*7*7)
-        x = self.fc(x)
-        x = self.softmax(x)
-        return x
+        #print("Input shape: ", x.shape)
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = x.view(-1)
+        output = self.out(x)
+        #print("Output shape: ", output.shape)
+        # Turn the output into a probability distribution
+        output = nn.Softmax(-1)(output)
+        return output
 
 
 class NeSyModel(pl.LightningModule):
@@ -122,13 +136,19 @@ class NeSyModel(pl.LightningModule):
         
         # Training case
         else:
+            start = time.time()
             and_or_tree = self.logic_engine.reason(self.program, queries)
+            self.log("reasoning_time", time.time() - start, on_epoch=True, prog_bar=True)
+            start = time.time()
             results = self.evaluator.evaluate(tensor_sources, and_or_tree, queries, index=0, train=True)
+            self.log("evaluation_time", time.time() - start, on_epoch=True, prog_bar=True)
+
         # and_or_tree = self.logic_engine.reason(self.program, queries)
         # results = self.evaluator.evaluate(tensor_sources, and_or_tree, queries)
         return results
 
     def training_step(self, I, batch_idx):
+        start = time.time()
         tensor_sources, queries, y_true = I
         y_preds = self.forward(tensor_sources, queries)
         loss = self.bce(y_preds.squeeze(), y_true.float().squeeze())
@@ -139,6 +159,11 @@ class NeSyModel(pl.LightningModule):
     def validation_step(self, I, batch_idx):
         tensor_sources, queries, y_true = I
         y_preds = self.forward(tensor_sources, queries)
+        # print("y_preds: ", y_preds)
+        # print("y_preds.argmax(dim=-1): ", y_preds.argmax(dim=-1))
+        # print("y_preds.argmax(dim=1): ", y_preds.argmax(dim=1))
+        # print("y_preds.argmax(dim=0): ", y_preds.argmax(dim=0))
+        # print("y_true: ", y_true)
         accuracy = accuracy_score(y_true, y_preds.argmax(dim=-1))
         self.log("test_acc", accuracy, on_step=True, on_epoch=True, prog_bar=True)
         

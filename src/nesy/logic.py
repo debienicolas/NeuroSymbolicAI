@@ -1,3 +1,5 @@
+import enum
+from math import comb
 from scipy import constants
 from sympy import substitution
 from nesy.term import Term, Clause, Fact, Variable
@@ -25,14 +27,22 @@ class ForwardChaining(LogicEngine):
         for term in known_terms:
             assert isinstance(term, Term)
             if term.arguments != () and not all([isinstance(arg, Variable) for arg in term.arguments]):
-                for arg in term.arguments:
+                # Hardcoded assumptions: not constant in a neural predicate 
+                if isinstance(term, Fact) and term.weight is not None:
+                    continue
+                
+                for i,arg in enumerate(term.arguments):
+                    if i == len(term.arguments) - 1:
+                        continue
                     constants.add(arg)
         return constants
     
     def generateSubstitutions(self, variables, constants):
         
         substitutions = []
+        combos = []
         for combo in product(constants, repeat=len(variables)):
+            combos.append(combo)
             substitutions.append(dict(zip(variables, combo)))
         return substitutions
 
@@ -166,22 +176,32 @@ class ForwardChaining(LogicEngine):
 
             cont = True
             while cont:
+                
                 # check every clause
+                
                 for clause in clauses:
-
+                    
                     # check if the query can constrain the substitution
                     constrained_subs = self.getConstrainedSubstitutions(clause, query)
 
                     all_vars = self.getVarsClause(clause)
+                    assert all([isinstance(var, Variable) for var in all_vars])
                     empty_vars = [var for var in all_vars if var not in constrained_subs.keys()]
+                    assert all([isinstance(var, Variable) for var in empty_vars])
+
 
                     constants = self.getConstants(known_terms)
+                    assert all([isinstance(term, Term) for term in constants])
 
                     substitutions = self.generateSubstitutions(empty_vars, constants)
 
                     body = [term for term in clause.body]
 
+                    # substitution = {Variable('A'): Term('tensor', [Variable('images'), 0]), Variable('B'): Term('tensor',  [Variable('images'), 1]),Variable('C'): Term('tensor', [Variable('images'), 0]), Variable('Z'): Term(0,()), Variable('N1'): Term(0,()), Variable('N2'): Term(0,()),Variable('N3'): Term(0,())}
+                    
                     for substitution in substitutions:
+                        
+
                         # merge the constrained substitution with the generated substitution
                         substitution.update(constrained_subs)
                         substituted_body = [self.apply_substitution(substitution, term) for term in body]

@@ -29,9 +29,9 @@ for i in range(2,6):
                     neural_predicates=neural_predicates,
                     label_semantics=SumProductSemiring())
 
-    wandb_logger = WandbLogger(project='nesy',name=f"nesy_classes_strat{i}")
+    wandb_logger = WandbLogger(project='nesy',name=f"nesy_classes_runtime{i}")
 
-    max_epochs = 10
+    max_epochs = 1
     batch_size = 256
     wandb_logger.experiment.config["epochs"] = max_epochs
     wandb_logger.experiment.config["batch_size"] = batch_size

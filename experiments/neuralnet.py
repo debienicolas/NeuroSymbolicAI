@@ -30,20 +30,20 @@ model = NeSyModel(program=task_train.program,
                 neural_predicates=neural_predicates,
                 label_semantics=SumProductSemiring())
 
-wandb_logger = WandbLogger(project='nesy',name=f"conv_net")
+# wandb_logger = WandbLogger(project='nesy',name=f"conv_net")
 
 max_epochs = 10
-batch_size = 256
-wandb_logger.experiment.config["epochs"] = max_epochs
-wandb_logger.experiment.config["batch_size"] = batch_size
-wandb_logger.experiment.config["semantics"] = SumProductSemiring().__class__.__name__
-wandb_logger.experiment.config["train_examples"] = task_train.nr_examples
-wandb_logger.experiment.config["test_examples"] = task_test.nr_examples
-wandb_logger.experiment.config["n_classes"] = 3
+batch_size = 128
+# wandb_logger.experiment.config["epochs"] = max_epochs
+# wandb_logger.experiment.config["batch_size"] = batch_size
+# wandb_logger.experiment.config["semantics"] = SumProductSemiring().__class__.__name__
+# wandb_logger.experiment.config["train_examples"] = task_train.nr_examples
+# wandb_logger.experiment.config["test_examples"] = task_test.nr_examples
+# wandb_logger.experiment.config["n_classes"] = 3
 
-trainer = pl.Trainer(max_epochs=max_epochs, accelerator="cpu", logger=wandb_logger)
+trainer = pl.Trainer(max_epochs=max_epochs, accelerator="cpu")
 #trainer = pl.Trainer(max_epochs=max_epochs, accelerator="cpu")
 trainer.fit(model=model,
         train_dataloaders=task_train.dataloader(batch_size=batch_size),
         val_dataloaders=task_test.dataloader(batch_size=batch_size))
-wandb_logger.finalize("success")
+

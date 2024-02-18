@@ -13,12 +13,6 @@ import semantics
 task_train = AdditionTask(n_classes=2)
 task_test = AdditionTask(n_classes=2, train=False)
 
-print("Number of training examples: ",task_train.nr_examples)
-print("Number of testing examples: ",task_test.nr_examples)
-
-print("Shape of training images: ",task_train.original_images.shape)
-print("Shape of testing images: ",task_test.original_images.shape)
-
 
 neural_predicates = torch.nn.ModuleDict({"digit": MNISTEncoder(task_train.n_classes)})
 
@@ -29,13 +23,12 @@ model = NeSyModel(program=task_train.program,
                   neural_predicates=neural_predicates,
                   label_semantics=semantic)
 
-print("Init the training")
 wandb_logger = WandbLogger(project='nesy')
 
 max_epochs = 10
-batch_size = 256
+batch_size = 2
 
-if True:    
+if False:    
     wandb_logger.experiment.config["epochs"] = max_epochs
     wandb_logger.experiment.config["batch_size"] = batch_size
     wandb_logger.experiment.config["semantics"] = semantic.__class__.__name__
