@@ -19,9 +19,10 @@ import torch
 import pytorch_lightning as pl
 import wandb
 
+n_classes = 3
 
-task_train = AdditionTask(n_classes=2)
-task_test = AdditionTask(n_classes=2, train=False)
+task_train = AdditionTask(n_classes=n_classes)
+task_test = AdditionTask(n_classes=n_classes, train=False)
 
 neural_predicates = torch.nn.ModuleDict({"digit": MNISTEncoder(task_train.n_classes)})
 
@@ -31,9 +32,9 @@ for sem in SEMANTICS:
                       logic_engine=ForwardChaining(),
                       neural_predicates=neural_predicates,
                       label_semantics=sem)
-    wandb_logger = WandbLogger(project='nesy')
+    wandb_logger = WandbLogger(project='nesy', name=f"nesy_semantics{sem.__class__.__name__} + {n_classes}")
     batch_size = 256
-    max_epochs = 2
+    max_epochs = 10
     wandb_logger.experiment.config.update({"epochs": max_epochs, "batch_size": batch_size, "semantics": sem.__class__.__name__})
     trainer = pl.Trainer(max_epochs=max_epochs, accelerator="cpu", logger=wandb_logger)
     trainer.fit(model=model,

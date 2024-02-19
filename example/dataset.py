@@ -108,7 +108,7 @@ class AdditionTask(Dataset):
                 query_string += str(i) + "), tensor(images,"
             query_string += f"{self.num_digits-1}), "
 
-            queries = [parse_program(query_string + f" {z}).")[0].term for z in range(self.n_classes * (self.num_digits-1))]
+            queries = [parse_program(query_string + f" {z}).")[0].term for z in range((self.n_classes-1) * (self.num_digits)+1)]
 
             # queries = [parse_program("addition(tensor(images, 0), tensor(images,1), {}).".format(z))[0].term
             #            for z in range(self.n_classes * 2 - 1)]

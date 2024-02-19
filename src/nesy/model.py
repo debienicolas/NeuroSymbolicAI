@@ -37,40 +37,42 @@ class MNISTEncoder(nn.Module):
         # o.shape = [2]
         # output has probability for each class
         return o
-    
-# class MNISTEncoderConv(nn.Module):
-#     # Using a convolutional neural network
-#     def __init__(self,n):
-#         self.n = n
-#         super(MNISTEncoderConv, self).__init__()
-#         # input shape = [1,28,28]
-#         self.conv1 = nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
-#         self.conv2 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
 
-#     def forward(self, x):
-#         #print("Input shape: ", x.shape)
-#         x = self.conv1(x)
-#         x = nn.ReLU()(x)
-#         x = nn.MaxPool2d(kernel_size=2, stride=2)(x)
-#         x = self.conv2(x)
-#         x = nn.ReLU()(x)
-#         x = nn.MaxPool2d(kernel_size=2, stride=2)(x)
-#         x = x.view(-1, 32*7*7)
-#         x = nn.Linear(32*7*7, 3)(x)
-#         # x = x.view(-1, 32*14*14)
-#         # x = nn.Linear(32*14*14, 3)(x)
-#         x = nn.Softmax(-1)(x)
-#         x = x.squeeze()
-#         #o = self.net(x)
-#         #print("Output shape: ", x.shape)
-#         return x
+class MNISTEncoderLarge(nn.Module):
+    def __init__(self, n):
+        self.n = n
+        super(MNISTEncoderLarge, self).__init__()
+        self.net = nn.Sequential(
+            nn.Linear(784, 85),
+            nn.ReLU(),
+            nn.Linear(85, 30),
+            nn.ReLU(),
+            nn.Linear(30, n),
+            nn.Softmax(-1))
+
+    def forward(self, x):
+        #We flatten the tensor
+        original_shape = x.shape
+        # original_shape = [1,1,28,28]
+        n_dims = len(original_shape)
+        # n_dims = 4
+        x = x.view(-1, 784)
+        o =  self.net(x)
+        # o.shape = [1,2]
+        #We restore the original shape
+        o = o.view(*original_shape[0:n_dims-3], self.n)
+        # o.shape = [2]
+        # output has probability for each class
+        return o
+
+    
     
 class MNISTEncoderConv(nn.Module):
     def __init__(self, n):
         super(MNISTEncoderConv, self).__init__()
         self.n = n
         self.conv1 = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=16,kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(in_channels=1, out_channels=4,kernel_size=9, stride=1, padding=2),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2)
         )
@@ -84,14 +86,14 @@ class MNISTEncoderConv(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2)
         )
-        self.out = nn.Linear(64*3*3, n)
+        self.out = nn.Linear(4*12*12, n)
 
 
     def forward(self, x):
         #print("Input shape: ", x.shape)
         x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
+        #x = self.conv2(x)
+        #x = self.conv3(x)
         x = x.view(-1)
         output = self.out(x)
         #print("Output shape: ", output.shape)
@@ -138,17 +140,16 @@ class NeSyModel(pl.LightningModule):
         else:
             start = time.time()
             and_or_tree = self.logic_engine.reason(self.program, queries)
-            self.log("reasoning_time", time.time() - start, on_epoch=True, prog_bar=True)
+            self.log("reasoning_time", time.time() - start,on_step=True, on_epoch=True, prog_bar=True)
             start = time.time()
             results = self.evaluator.evaluate(tensor_sources, and_or_tree, queries, index=0, train=True)
-            self.log("evaluation_time", time.time() - start, on_epoch=True, prog_bar=True)
+            self.log("evaluation_time", time.time() - start,on_step=True,on_epoch=True, prog_bar=True)
 
         # and_or_tree = self.logic_engine.reason(self.program, queries)
         # results = self.evaluator.evaluate(tensor_sources, and_or_tree, queries)
         return results
 
     def training_step(self, I, batch_idx):
-        start = time.time()
         tensor_sources, queries, y_true = I
         y_preds = self.forward(tensor_sources, queries)
         loss = self.bce(y_preds.squeeze(), y_true.float().squeeze())
@@ -159,11 +160,6 @@ class NeSyModel(pl.LightningModule):
     def validation_step(self, I, batch_idx):
         tensor_sources, queries, y_true = I
         y_preds = self.forward(tensor_sources, queries)
-        # print("y_preds: ", y_preds)
-        # print("y_preds.argmax(dim=-1): ", y_preds.argmax(dim=-1))
-        # print("y_preds.argmax(dim=1): ", y_preds.argmax(dim=1))
-        # print("y_preds.argmax(dim=0): ", y_preds.argmax(dim=0))
-        # print("y_true: ", y_true)
         accuracy = accuracy_score(y_true, y_preds.argmax(dim=-1))
         self.log("test_acc", accuracy, on_step=True, on_epoch=True, prog_bar=True)
         

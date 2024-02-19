@@ -6,7 +6,7 @@ from nesy.semantics import SumProductSemiring,ProductTNorm
 import torch
 import pytorch_lightning as pl
 
-n = 3
+n = 5
 n_classes = 2
 task_train = AdditionTask(n=n,n_classes=2)
 task_test = AdditionTask(n=n,n_classes=2, train=False)

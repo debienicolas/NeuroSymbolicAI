@@ -10,23 +10,23 @@ import pytorch_lightning as pl
 
 import semantics
 
-task_train = AdditionTask(n_classes=2)
-task_test = AdditionTask(n_classes=2, train=False)
+task_train = AdditionTask(n=2,n_classes=2)
+task_test = AdditionTask(n=2,n_classes=2, train=False)
 
 
 neural_predicates = torch.nn.ModuleDict({"digit": MNISTEncoder(task_train.n_classes)})
 
-semantic = LukasieviczTNorm()
+semantic = SumProductSemiring()
 
 model = NeSyModel(program=task_train.program,
                   logic_engine=ForwardChaining(),
                   neural_predicates=neural_predicates,
                   label_semantics=semantic)
 
-wandb_logger = WandbLogger(project='nesy')
+#wandb_logger = WandbLogger(project='nesy')
 
 max_epochs = 10
-batch_size = 2
+batch_size = 256
 
 if False:    
     wandb_logger.experiment.config["epochs"] = max_epochs

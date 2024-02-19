@@ -1,3 +1,4 @@
+from re import T
 import sys
 import os
 
@@ -19,8 +20,9 @@ import pytorch_lightning as pl
 import wandb
 
 for i in range(2,6):
-    task_train = AdditionTask(n_classes=i)
-    task_test = AdditionTask(n_classes=i, train=False)
+    n_classes = 2
+    task_train = AdditionTask(n=i,n_classes=2)
+    task_test = AdditionTask(n=i,n_classes=2, train=False)
 
     neural_predicates = torch.nn.ModuleDict({"digit": MNISTEncoder(task_train.n_classes)})
 
@@ -29,17 +31,17 @@ for i in range(2,6):
                     neural_predicates=neural_predicates,
                     label_semantics=SumProductSemiring())
 
-    wandb_logger = WandbLogger(project='nesy',name=f"nesy_classes_runtime{i}")
+    wandb_logger = WandbLogger(project='nesy',name=f"nesy_arguments_runtime{i}")
 
-    max_epochs = 1
-    batch_size = 256
+    max_epochs = 10
+    batch_size = 128
     wandb_logger.experiment.config["epochs"] = max_epochs
     wandb_logger.experiment.config["batch_size"] = batch_size
     wandb_logger.experiment.config["semantics"] = SumProductSemiring().__class__.__name__
     wandb_logger.experiment.config["train_examples"] = task_train.nr_examples
     wandb_logger.experiment.config["test_examples"] = task_test.nr_examples
-    wandb_logger.experiment.config["n_classes"] = i
-
+    wandb_logger.experiment.config["n_classes"] = n_classes
+    wandb_logger.experiment.config["n_arguments"] = i
 
     trainer = pl.Trainer(max_epochs=max_epochs, accelerator="cpu", logger=wandb_logger)
     #trainer = pl.Trainer(max_epochs=max_epochs, accelerator="cpu")

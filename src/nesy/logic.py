@@ -28,9 +28,8 @@ class ForwardChaining(LogicEngine):
             assert isinstance(term, Term)
             if term.arguments != () and not all([isinstance(arg, Variable) for arg in term.arguments]):
                 # Hardcoded assumptions: not constant in a neural predicate 
-                if isinstance(term, Fact) and term.weight is not None:
+                if isinstance(term, Term) and term.functor == "digit":
                     continue
-                
                 for i,arg in enumerate(term.arguments):
                     if i == len(term.arguments) - 1:
                         continue
