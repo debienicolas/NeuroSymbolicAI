@@ -195,12 +195,8 @@ class ForwardChaining(LogicEngine):
                     substitutions = self.generateSubstitutions(empty_vars, constants)
 
                     body = [term for term in clause.body]
-
-                    # substitution = {Variable('A'): Term('tensor', [Variable('images'), 0]), Variable('B'): Term('tensor',  [Variable('images'), 1]),Variable('C'): Term('tensor', [Variable('images'), 0]), Variable('Z'): Term(0,()), Variable('N1'): Term(0,()), Variable('N2'): Term(0,()),Variable('N3'): Term(0,())}
                     
                     for substitution in substitutions:
-                        
-
                         # merge the constrained substitution with the generated substitution
                         substitution.update(constrained_subs)
                         substituted_body = [self.apply_substitution(substitution, term) for term in body]

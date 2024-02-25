@@ -19,8 +19,8 @@ import pytorch_lightning as pl
 import wandb
 
 for i in range(2,6):
-    task_train = AdditionTask(n_classes=i)
-    task_test = AdditionTask(n_classes=i, train=False)
+    task_train = AdditionTask(n=3,n_classes=i)
+    task_test = AdditionTask(n=3,n_classes=i, train=False)
 
     neural_predicates = torch.nn.ModuleDict({"digit": MNISTEncoder(task_train.n_classes)})
 
